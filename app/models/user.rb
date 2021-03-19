@@ -1,7 +1,9 @@
 class User < ApplicationRecord
     # トークンは :nameや:emailといった属性のようにデータベースに保存できないので、
     # 仮の属性 :remember_token を作り、トークンをブラウザのcookiesに保存する。 self.remember_token
-  attr_accessor :remember_token, :activation_token
+  attr_accessor :remember_token,
+                :activation_token,
+                :reset_token
   before_save :downcase_email
   before_create :create_activation_digest
   validates :name,  presence: true, 
@@ -30,7 +32,7 @@ class User < ApplicationRecord
   # 永続セッションのためにユーザーをデータベースに記憶する
   def remember
     self.remember_token = User.new_token #セッターメソッドを呼び出すときには必ずselfを付ける
-    update_attribute(:remember_digest, User.digest(remember_token)) #上記以外はselfは省略可能
+    self.update_attribute(:remember_digest, User.digest(self.remember_token)) #上記以外はselfは省略可能
     # selfを付けた場合 => self.update_attribute(:remember_digest, User.digest(self.remember_token))
     # update_attributeはvalidationを経由せずにデータベース上の属性を更新させる。
     # このrememberメソッドではremember_tokenが生成されてUser.digestでハッシュ化されるだけなのでvalidationは不要。 
@@ -49,13 +51,27 @@ class User < ApplicationRecord
     self.update_attribute(:remember_digest, nil)
   end
 
+  def activate
+    self.update_attribute(:activated,    true)
+    self.update_attribute(:activated_at, Time.zone.now)
+  end
+
   def send_activation_email
     UserMailer.account_activation(self).deliver_now
   end
 
-  def activate
-    self.update_attribute(:activated,    true)
-    self.update_attribute(:activated_at, Time.zone.now)
+  def create_reset_digest
+    self.reset_token = User.new_token
+    self.update_attribute(:reset_digest, User.digest(self.reset_token))
+    self.update_attribute(:reset_sent_at, Time.zone.now)
+  end
+
+  def send_password_reset_email
+    UserMailer.password_reset(self).deliver_now
+  end
+
+  def password_reset_expired?
+    self.reset_sent_at < 2.hours.ago
   end
 
   private
@@ -66,7 +82,7 @@ class User < ApplicationRecord
     
     def create_activation_digest
       self.activation_token = User.new_token
-      self.activation_digest = User.digest(activation_token)
+      self.activation_digest = User.digest(self.activation_token)
     end
 end
 

@@ -7,9 +7,12 @@ class UserMailer < ApplicationMailer
     # => return: mail object (text/html)
   end
 
-  def password_reset
-    @greeting = "Hi"
-
-    mail to: "to@example.org"
+  # @user.send_password_reset_email
+  # UserMailer.account_activation(self).deliver_now /// self == @user
+  # @userがmailオブジェクトに入る
+  def password_reset(user)
+    @user = user
+    mail to: user.email,
+         subject: "Password reset"
   end
 end
