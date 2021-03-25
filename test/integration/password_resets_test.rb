@@ -68,12 +68,12 @@ class PasswordResetsTest < ActionDispatch::IntegrationTest
 
     assert_select 'div#error_explanation'
 
-    # 有効なパスワードとパスワード確認
+    # 有効なパスワードとパスワード確認　
     patch password_reset_path(user.reset_token),
           params: { email: user.email,
                     user: { password:              "foobaz",
                             password_confirmation: "foobaz" } }
-                            
+
     assert is_logged_in?
     assert_not flash.empty?
     assert_redirected_to user

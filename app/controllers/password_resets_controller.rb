@@ -24,6 +24,7 @@ class PasswordResetsController < ApplicationController
 
   def update
    if params[:user][:password].empty?
+    # ActiveModel::Errors errors.add(:attribute, :type= :invalid, **options) エラーを返す
     @user.errors.add(:password, :blank)
     render 'edit'
    elsif @user.update(user_params)

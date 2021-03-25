@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  has_many :microposts, dependent: :destroy
     # トークンは :nameや:emailといった属性のようにデータベースに保存できないので、
     # 仮の属性 :remember_token を作り、トークンをブラウザのcookiesに保存する。 self.remember_token
   attr_accessor :remember_token,
@@ -72,6 +73,12 @@ class User < ApplicationRecord
 
   def password_reset_expired?
     self.reset_sent_at < 2.hours.ago
+  end
+
+  def feed
+    # ?にはself.idが入る(selfは省略可)
+    # User.microposts と同じ結果
+    Micropost.where("user_id = ?", self.id)
   end
 
   private
