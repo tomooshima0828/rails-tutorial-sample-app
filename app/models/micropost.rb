@@ -1,4 +1,5 @@
 class Micropost < ApplicationRecord
+  # default: foreign_key: "user_id"
   belongs_to :user
   # 一つの投稿に一つの画像/動画を添付できる
   has_one_attached :image

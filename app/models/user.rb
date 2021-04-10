@@ -1,5 +1,22 @@
 class User < ApplicationRecord
+
+  # class_name: "Micropost", foreign_key: "user_id" 規約の通りなので省略する
   has_many :microposts, dependent: :destroy
+  
+  # class_name: "Relationship", foreign_key: "follower_id" 規約とは違うので記述する
+  has_many :active_relationships,  class_name: "Relationship",
+                                   foreign_key: "follower_id",
+                                   dependent: :destroy
+
+  has_many :passive_relationships, class_name:  "Relationship",
+                                   foreign_key: "followed_id",
+                                   dependent:   :destroy
+
+  has_many :following,             through: :active_relationships,
+                                   source: :followed
+                                   
+  has_many :followers,             through: :passive_relationships,
+                                   source: :follower
     # トークンは :nameや:emailといった属性のようにデータベースに保存できないので、
     # 仮の属性 :remember_token を作り、トークンをブラウザのcookiesに保存する。 self.remember_token
   attr_accessor :remember_token,
@@ -78,7 +95,29 @@ class User < ApplicationRecord
   def feed
     # ?にはself.idが入る(selfは省略可)
     # User.microposts と同じ結果
-    Micropost.where("user_id = ?", self.id)
+    # Micropost.where("user_id = ?", self.id)
+    # Micropost.where("user_id IN (?) OR user_id = ?", following_ids, self.id)
+    # Micropost.where("user_id IN (:following_ids) OR user_id = :user_id",
+    #  following_ids: following_ids, user_id: id)
+    following_ids = "SELECT followed_id FROM relationships
+                     WHERE follower_id = :user_id"
+    Micropost.where("user_id IN (#{following_ids})
+                     OR user_id = :user_id", user_id: id)
+  end
+
+  # ユーザーをフォローする
+  def follow(other_user)
+    following << other_user
+  end
+
+  # ユーザーをフォロー解除する
+  def unfollow(other_user)
+    active_relationships.find_by(followed_id: other_user.id).destroy
+  end
+
+  # 現在のユーザーがフォローしてたらtrueを返す
+  def following?(other_user)
+    following.include?(other_user)
   end
 
   private

@@ -26,3 +26,14 @@ users = User.order(:created_at).take(6)
     user.microposts.create!(content: content)
   end
 end
+
+users = User.all
+user = users.first
+following = users[2..50]
+followers = users[3..40]
+following.each do |followed|
+  user.follow(followed)
+end
+followers.each do |follower|
+  follower.follow(user)
+end
